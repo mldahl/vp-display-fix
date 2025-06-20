@@ -334,7 +334,8 @@ try {
         exit 1
     }
 
-    $originalIniLines = Get-Content -Path $iniFilePath -Raw -Encoding UTF8 -ErrorAction Stop | Select-String -Pattern ".*" -AllMatches | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
+    # Use Get-Content to preserve all lines, including blank ones
+    $originalIniLines = Get-Content -Path $iniFilePath -Encoding UTF8 -ErrorAction Stop
 
     # Read the current INI content into a structured format for checks
     $currentIniData = Read-IniFileContent -FilePath $iniFilePath
