@@ -1,3 +1,3 @@
 # Visual Pinball X Display Order Fix
 
-powershell.exe -executionpolicy bypass .\VPinballXDisplayFix.ps1 -DryRun
+powershell.exe -ExecutionPolicy Bypass -File .\VPinballXDisplayFix.ps1 -DryRun
