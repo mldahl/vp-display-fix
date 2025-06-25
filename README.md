@@ -69,5 +69,6 @@ To run the script and log all output to a file:
 3) In the GlobalSettings window, selected the "StartUP" tab
 4) In the Menu StartUP Script box, add the path to a hidden PowerShell launcher, replacing the file path with the actual location of the script:
 
+```bat
 powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Path\To\VPinballXDisplayFix.ps1" -LogToFile
-
+```
