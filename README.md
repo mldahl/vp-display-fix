@@ -1,7 +1,5 @@
 # Visual Pinball X Display Order Fix
 
-powershell.exe -ExecutionPolicy Bypass -File .\VPinballXDisplayFix.ps1 -DryRun
-
 Automatically identifies the primary display and updates Visual Pinball X display settings in both the Windows Registry and the `VPinballX.ini` file.
 
 ---
