@@ -17,7 +17,7 @@ This script performs the following actions:
    - `RefreshRate`
    - `ColorDepth`
 4. Verifies the existence of the `VPinballX.ini` file and `[Player]` section.
-5. Updates the same display-related keys in the `[Player]` section of `VPinballX.ini`.
+5. Updates the same display related keys in the `[Player]` section of `VPinballX.ini`.
 
 ---
 
@@ -28,17 +28,6 @@ Simulates changes without applying them to the registry or INI file. Useful for 
 
 ### `-LogToFile`
 Redirects all script output to a log file named `VPinballXDisplayFix.log`, located in the same folder as `VPinballX.ini`. Each entry includes a timestamp.
-
----
-
-## 📝 Notes
-
-- Uses `System.Windows.Forms.Screen` to accurately detect the 0-based primary monitor index.
-- Uses `Get-CimInstance` to retrieve the primary display’s refresh rate.
-- Writes to the `HKCU` registry hive and `%APPDATA%\VPinballX\VPinballX.ini`.
-- Does **not** require Administrator privileges under typical usage.
-- Ensure Visual Pinball X is **closed** before running this script to prevent it from overwriting changes.
-- Back up your `VPinballX.ini` if you have custom settings.
 
 ---
 
@@ -60,6 +49,8 @@ To run the script and log all output to a file:
 .\VPinballXDisplayFix.ps1 -LogToFile
 ```
 
+---
+
 ## 🕹️ Using with PinUP Popper
 
 1) Open PinUP Popper Config (\PinUPSystem\PinUpMenuSetup.exe)
@@ -70,3 +61,14 @@ To run the script and log all output to a file:
 ```bat
 start "" powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Path\To\VPinballXDisplayFix.ps1" -LogToFile
 ```
+
+---
+
+## 📝 Notes
+
+- This works well for my setup.  You may need to make minor changes for yours
+- Run this script with `-DryRun` first to ensure it works as expected before allow it to make any changes
+- Writes to the `HKCU` registry hive and `%APPDATA%\VPinballX\VPinballX.ini`.
+  - Make sure to backup the `Visual Pinball` registry key any custom changes to `VPinballX.ini` before running
+- Does **not** require Administrator privileges under typical usage
+- Ensure Visual Pinball X is **closed** before running this script to prevent it from overwriting changes
