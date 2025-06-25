@@ -16,9 +16,9 @@
         and 'ColorDepth' registry keys located under
         'HKCU:\Software\Visual Pinball\VP10\Player'. These keys are relevant
         for older VPX versions or for the initial migration of settings to
-        the INI file in VPX 10.8+.
+        the INI file in VPX 10.8.
     4.  Verifies the existence of the 'VPinballX.ini' file, the '[Player]'
-        section within it, and specific display-related keys in that section.
+        section within it, and specific display related keys in that section.
         If any are missing, the script will print an error and exit.
     5.  Updates the 'Display', 'Height', 'Width',
         'RefreshRate', and 'ColorDepth' settings within the
@@ -33,7 +33,7 @@
 .PARAMETER LogToFile
     If specified, all script output (which would normally go to the console)
     will be redirected and appended to a log file instead. The log file
-    is named 'vpx_display_fix.log' and is located next to VPinballX.ini.
+    is named 'VPinballXDisplayFix.log' and is located next to VPinballX.ini.
     Each log entry will be timestamped.
 
 .NOTES
@@ -55,19 +55,15 @@
 
 .EXAMPLE
     To run the script normally (update settings and output to console):
-    .\Update-VPXDisplaySettings.ps1
+    .\VPinballXDisplayFix.ps1
 
 .EXAMPLE
     To perform a dry run (simulate changes without applying them):
-    .\Update-VPXDisplaySettings.ps1 -DryRun
+    .\VPinballXDisplayFix.ps1 -DryRun
 
 .EXAMPLE
     To run the script and log all output to a file:
-    .\Update-VPXDisplaySettings.ps1 -LogToFile
-
-.EXAMPLE
-    To perform a dry run and log output to a file:
-    .\Update-VPXDisplaySettings.ps1 -DryRun -LogToFile
+    .\VPinballXDisplayFix.ps1 -LogToFile
 #>
 
 param (
@@ -79,7 +75,7 @@ param (
 $vpxRegPath = "HKCU:\Software\Visual Pinball\VP10\Player"
 $vpxIniFileName = "VPinballX.ini"
 $vpxIniSection = "Player"
-$logFileName = "vpx_display_fix.log"
+$logFileName = "VPinballXDisplayFix.log"
 $logFilePath = Join-Path $env:APPDATA "VPinballX\$logFileName"
 
 # --- Custom Logging Function ---
@@ -115,7 +111,7 @@ function Read-IniFileContent {
     if (Test-Path $FilePath) {
         Write-LogOutput "  Reading existing INI file: '$FilePath'" -ForegroundColor DarkCyan
         # Get-Content -Raw ensures entire file is read as a single string, then split by common line endings
-        (Get-Content -Path $FilePath -Raw -Encoding UTF8) -split "`r`n|\n" | ForEach-Object {
+        (Get-Content -Path $FilePath -Raw -Encoding UTF8) -split "`r`n|`n" | ForEach-Object {
             $line = $_.Trim()
             if ($line -match "^\[(.*)\]$") { # Section header like [Player]
                 $currentSection = $matches[1]
@@ -175,7 +171,7 @@ function Write-IniFileContent {
             # If this key is one we want to update (it MUST exist in $IniDataToWrite for the target section)
             if ($IniDataToWrite[$TargetSection].Contains($key)) { # FIX: Changed to .Contains()
                 # Add the updated value for this key
-                [void]$outputLines.Add("$key=$($IniDataToWrite[$TargetSection][$key])")
+                [void]$outputLines.Add("$key = $($IniDataToWrite[$TargetSection][$key])")
                 Write-LogOutput "    Updated existing key '$key' in section '[$TargetSection]'." -ForegroundColor Green
                 # Remove it from IniDataToWrite so it's not checked again (as already written)
                 # It's important to remove it from the data passed in ($IniDataToWrite) so it doesn't get added
@@ -198,9 +194,11 @@ function Write-IniFileContent {
 
     # Write the content
     if ($DryRunSwitch) {
-        Write-LogOutput "  Dry run: Would write the following content to '$FilePath':`n$($outputLines -join "`n")" -ForegroundColor DarkYellow
+        Write-LogOutput "  Dry run: Would write the following content to '$FilePath':$([Environment]::NewLine)$($outputLines -join [Environment]::NewLine)" -ForegroundColor DarkYellow
     } else {
-        Set-Content -Path $FilePath -Value ($outputLines -join "`n") -Encoding UTF8 -Force -ErrorAction Stop
+        # chatgpt fix
+        # Set-Content -Path $FilePath -Value ($outputLines -join [Environment]::NewLine) -Encoding UTF8 -Force -ErrorAction Stop
+        Set-Content -Path $FilePath -Value $outputLines -Encoding UTF8 -Force
         Write-LogOutput "'$FilePath' update complete." -ForegroundColor Green
     }
 }
@@ -268,7 +266,7 @@ if (-not $refreshRate -or $refreshRate -eq 0) { # 0 can sometimes indicate unini
 }
 
 
-Write-LogOutput "`nDetected Primary Display Details:" -ForegroundColor Cyan
+Write-LogOutput "$([Environment]::NewLine)Detected Primary Display Details:" -ForegroundColor Cyan
 Write-LogOutput "  Windows 0-based Index: $primaryDisplayIndex" -ForegroundColor Cyan
 Write-LogOutput "  Width: $displayWidth px" -ForegroundColor Cyan
 Write-LogOutput "  Height: $displayHeight px" -ForegroundColor Cyan
@@ -276,7 +274,7 @@ Write-LogOutput "  Color Depth (Bits Per Pixel): $colorDepth" -ForegroundColor C
 Write-LogOutput "  Refresh Rate: $refreshRate Hz" -ForegroundColor Cyan
 
 # 2. Update Visual Pinball X Registry Keys
-Write-LogOutput "`nAttempting to update Visual Pinball X Registry settings at '$vpxRegPath'..." -ForegroundColor Green
+Write-LogOutput "$([Environment]::NewLine)Attempting to update Visual Pinball X Registry settings at '$vpxRegPath'..." -ForegroundColor Green
 
 try {
     # --- Strict Check: Registry Path Existence ---
@@ -325,7 +323,7 @@ catch {
 # 3. Update VPinballX.ini File
 $iniFilePath = Join-Path $env:APPDATA "VPinballX\$vpxIniFileName"
 
-Write-LogOutput "`nAttempting to update VPinballX.ini file at '$iniFilePath'..." -ForegroundColor Green
+Write-LogOutput "$([Environment]::NewLine)Attempting to update VPinballX.ini file at '$iniFilePath'..." -ForegroundColor Green
 
 try {
     # --- Strict Check: INI File Existence ---
@@ -334,7 +332,9 @@ try {
         exit 1
     }
 
-    $originalIniLines = Get-Content -Path $iniFilePath -Raw -Encoding UTF8 -ErrorAction Stop | Select-String -Pattern ".*" -AllMatches | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
+    # chatGPT fix
+    # $originalIniLines = Get-Content -Path $iniFilePath -Raw -Encoding UTF8 -ErrorAction Stop | Select-String -Pattern ".*" -AllMatches | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
+    $originalIniLines = Get-Content -Path $iniFilePath -Encoding UTF8
 
     # Read the current INI content into a structured format for checks
     $currentIniData = Read-IniFileContent -FilePath $iniFilePath
@@ -380,4 +380,4 @@ catch {
     exit 1 # Exit on INI error
 }
 
-Write-LogOutput "`nScript finished. Please restart Visual Pinball X to apply changes." -ForegroundColor Green
+Write-LogOutput "$([Environment]::NewLine)Script finished. Please restart Visual Pinball X to apply changes." -ForegroundColor Green
