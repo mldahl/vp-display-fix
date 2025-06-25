@@ -29,7 +29,7 @@ This script performs the following actions:
 Simulates changes without applying them to the registry or INI file. Useful for testing.
 
 ### `-LogToFile`
-Redirects all script output to a log file named `vpx_display_fix.log`, located in the same folder as `VPinballX.ini`. Each entry includes a timestamp.
+Redirects all script output to a log file named `VPinballXDisplayFix.log`, located in the same folder as `VPinballX.ini`. Each entry includes a timestamp.
 
 ---
 
@@ -44,7 +44,7 @@ Redirects all script output to a log file named `vpx_display_fix.log`, located i
 
 ---
 
-## 💻 Examples
+## 💻 Powershell Examples
 
 Run normally (apply settings and show output in console):
 
@@ -61,3 +61,13 @@ To run the script and log all output to a file:
 ```powershell
 .\VPinballXDisplayFix.ps1 -LogToFile
 ```
+
+## 🕹️ Using with PinUP Popper
+
+1) Open PinUP Popper Setup (Popper Setup.exe)
+2) Go to the "Startup" tab
+3) Under "Start Program 1", click the ... button
+4) Set the path to a hidden PowerShell launcher, replacing the file path with the location of the script:
+
+powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Path\To\VPinballXDisplayFix.ps1" -LogToFile
+
