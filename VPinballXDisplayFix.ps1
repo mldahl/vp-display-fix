@@ -110,7 +110,6 @@ function Read-IniFileContent {
 
     if (Test-Path $FilePath) {
         Write-LogOutput "  Reading existing INI file: '$FilePath'" -ForegroundColor DarkCyan
-        # Get-Content -Raw ensures entire file is read as a single string, then split by common line endings
         (Get-Content -Path $FilePath -Raw -Encoding UTF8) -split "`r`n|`n" | ForEach-Object {
             $line = $_.Trim()
             if ($line -match "^\[(.*)\]$") { # Section header like [Player]
@@ -119,22 +118,18 @@ function Read-IniFileContent {
                 if ($currentSection -eq $vpxIniSection) {
                     Write-LogOutput "    Found target section: '[$currentSection]'" -ForegroundColor DarkCyan
                 }
-            } elseif ($line -match "^([^=;\[\]]+?)\s*=(.*)$") { # Key-value pair like Sound3D = 4
+            } elseif ($line -match "^([^=;\[\]]+?)\s*=(.*)$") { # Key-value pair like Display = 1
                 if ($currentSection) { # Only process keys if we are within a known section
                     $key = $matches[1].Trim()
                     $value = $matches[2].Trim()
                     # Ensure it's not a comment or malformed section-like line that got through
                     if (-not $key.StartsWith(";") -and -not $key.StartsWith("[")) {
                         $iniData[$currentSection][$key] = $value
-                        # Write-LogOutput "      Found key '$key'='$value' in section '[$currentSection]'" -ForegroundColor DarkCyan
                     }
                 }
             }
-            # Lines that are comments, blank, or don't match key=value are skipped in this parsing phase
-            # Their preservation is handled by Write-IniFileContent
         }
     } else {
-        # This function assumes Test-Path was already done, if not, it will return empty $iniData
         Write-LogOutput "  INI file not found during Read-IniFileContent: '$FilePath'." -ForegroundColor Yellow
     }
     return $iniData
@@ -169,13 +164,11 @@ function Write-IniFileContent {
         elseif ($inCurrentSectionPass -and $trimmedOriginalLine -match "^([^=;\[\]]+?)\s*=(.*)$") {
             $key = $matches[1].Trim()
             # If this key is one we want to update (it MUST exist in $IniDataToWrite for the target section)
-            if ($IniDataToWrite[$TargetSection].Contains($key)) { # FIX: Changed to .Contains()
+            if ($IniDataToWrite[$TargetSection].Contains($key)) {
                 # Add the updated value for this key
                 [void]$outputLines.Add("$key = $($IniDataToWrite[$TargetSection][$key])")
                 Write-LogOutput "    Updated existing key '$key' in section '[$TargetSection]'." -ForegroundColor Green
-                # Remove it from IniDataToWrite so it's not checked again (as already written)
-                # It's important to remove it from the data passed in ($IniDataToWrite) so it doesn't get added
-                # as a "new" key later if we are writing out missing keys.
+                # Remove it from the data passed in ($IniDataToWrite) so it doesn't get added as a "new" key later if we are writing out missing keys.
                 $IniDataToWrite[$TargetSection].Remove($key)
             } else {
                 [void]$outputLines.Add($originalLine) # Add original line if not one we're updating
@@ -196,8 +189,6 @@ function Write-IniFileContent {
     if ($DryRunSwitch) {
         Write-LogOutput "  Dry run: Would write the following content to '$FilePath':$([Environment]::NewLine)$($outputLines -join [Environment]::NewLine)" -ForegroundColor DarkYellow
     } else {
-        # chatgpt fix
-        # Set-Content -Path $FilePath -Value ($outputLines -join [Environment]::NewLine) -Encoding UTF8 -Force -ErrorAction Stop
         Set-Content -Path $FilePath -Value $outputLines -Encoding UTF8 -Force
         Write-LogOutput "'$FilePath' update complete." -ForegroundColor Green
     }
@@ -332,15 +323,13 @@ try {
         exit 1
     }
 
-    # chatGPT fix
-    # $originalIniLines = Get-Content -Path $iniFilePath -Raw -Encoding UTF8 -ErrorAction Stop | Select-String -Pattern ".*" -AllMatches | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
     $originalIniLines = Get-Content -Path $iniFilePath -Encoding UTF8
 
     # Read the current INI content into a structured format for checks
     $currentIniData = Read-IniFileContent -FilePath $iniFilePath
 
     # --- Strict Check: INI Section Existence ---
-    if (-not $currentIniData.Contains($vpxIniSection)) { # FIX: Changed from ContainsKey to Contains for top-level ordered hashtable
+    if (-not $currentIniData.Contains($vpxIniSection)) {
         Write-Error "Section '[$vpxIniSection]' is missing in '$iniFilePath'. Exiting script."
         exit 1
     }
@@ -356,16 +345,13 @@ try {
 
     # --- Strict Check: INI Section Keys Existence ---
     foreach ($key in $iniUpdates.Keys) {
-        if (-not $currentIniData[$vpxIniSection].Contains($key)) { # FIX: Changed from ContainsKey to Contains for section-level ordered hashtable
+        if (-not $currentIniData[$vpxIniSection].Contains($key)) {
             Write-Error "Key '$key' is missing in section '[$vpxIniSection]' of '$iniFilePath'. Exiting script."
             exit 1
         }
     }
 
-    # Pass the desired state (which now only contains existing keys thanks to strict checks)
-    # and the original lines to the Write-IniFileContent function.
-    # We create a new ordered hashtable for IniDataToWrite to ensure we only pass
-    # the specific keys we intend to update, preventing unintended additions if this were to somehow change.
+    # Create a new ordered hashtable for IniDataToWrite to ensure we only pass the specific keys we intend to update, preventing unintended additions if this were to somehow change.
     $finalIniDataForWriting = [ordered]@{}
     $finalIniDataForWriting[$vpxIniSection] = [ordered]@{}
     foreach ($key in $iniUpdates.Keys) {
